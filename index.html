@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>GameZone Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --card: #16161f;
+    --border: #252535;
+    --accent: #00f5a0;
+    --accent2: #00b4d8;
+    --accent3: #f72585;
+    --accent4: #ffd60a;
+    --text: #e8e8f0;
+    --muted: #666680;
+    --radius: 16px;
+    --glow: 0 0 20px rgba(0,245,160,0.3);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Exo 2', sans-serif; overflow-x: hidden; }
+
+  /* ── SCREENS ── */
+  .screen { display: none; min-height: 100vh; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  /* ── REGISTRATION ── */
+  #screen-register {
+    align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 60% 20%, #0d1f1a 0%, var(--bg) 60%);
+    padding: 32px 24px;
+  }
+  .reg-logo { font-family: 'Orbitron', monospace; font-size: 2.6rem; font-weight: 900;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 2px; margin-bottom: 8px; }
+  .reg-tagline { color: var(--muted); font-size: .85rem; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 48px; }
+  .reg-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px 24px; width: 100%; max-width: 340px; }
+  .reg-card h2 { font-family: 'Orbitron', monospace; font-size: 1rem; color: var(--accent); letter-spacing: 1px; margin-bottom: 6px; }
+  .reg-card p { color: var(--muted); font-size: .8rem; margin-bottom: 24px; }
+  .field-label { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; display: block; }
+  .phone-wrap { display: flex; gap: 8px; margin-bottom: 20px; }
+  .country-code { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; color: var(--text); padding: 14px 12px; font-family: 'Exo 2', sans-serif; font-size: .95rem; width: 80px; text-align: center; }
+  .phone-input { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; color: var(--text); padding: 14px 16px; font-family: 'Exo 2', sans-serif; font-size: .95rem; outline: none; transition: border-color .2s; }
+  .phone-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,245,160,.1); }
+  .phone-input::placeholder { color: var(--muted); }
+  .btn-primary { width: 100%; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: 12px; color: #0a0a0f; font-family: 'Orbitron', monospace; font-size: .9rem; font-weight: 700; padding: 16px; cursor: pointer; letter-spacing: 1px; transition: transform .15s, box-shadow .15s; }
+  .btn-primary:active { transform: scale(0.97); }
+  .btn-primary:hover { box-shadow: var(--glow); }
+  .reg-err { color: var(--accent3); font-size: .78rem; margin-top: 10px; display: none; text-align: center; }
+
+  /* ── LOBBY ── */
+  #screen-lobby { background: var(--bg); }
+  .lobby-header { padding: 20px 20px 0; display: flex; align-items: center; justify-content: space-between; }
+  .hub-logo { font-family: 'Orbitron', monospace; font-size: 1.4rem; font-weight: 900;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .user-chip { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 6px 14px; font-size: .78rem; color: var(--muted); }
+  .lobby-hero { padding: 24px 20px 8px; }
+  .lobby-hero h1 { font-family: 'Orbitron', monospace; font-size: 1.1rem; color: var(--text); letter-spacing: .5px; }
+  .lobby-hero p { color: var(--muted); font-size: .8rem; margin-top: 4px; }
+  .games-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 16px 20px; flex: 1; }
+  .game-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 16px; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform .18s, border-color .18s, box-shadow .18s; position: relative; overflow: hidden; }
+  .game-card::before { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity .2s; }
+  .game-card:active { transform: scale(0.95); }
+  .game-card:hover { transform: translateY(-3px); }
+  .game-card.ttt { border-color: #2a3a50; }
+  .game-card.ttt:hover, .game-card.ttt:active { border-color: var(--accent2); box-shadow: 0 0 24px rgba(0,180,216,.25); }
+  .game-card.rps { border-color: #3a2a40; }
+  .game-card.rps:hover, .game-card.rps:active { border-color: var(--accent3); box-shadow: 0 0 24px rgba(247,37,133,.25); }
+  .game-card.mem { border-color: #2a3a20; }
+  .game-card.mem:hover, .game-card.mem:active { border-color: var(--accent); box-shadow: 0 0 24px rgba(0,245,160,.25); }
+  .game-card.num { border-color: #3a3020; }
+  .game-card.num:hover, .game-card.num:active { border-color: var(--accent4); box-shadow: 0 0 24px rgba(255,214,10,.25); }
+  .game-icon { font-size: 2.8rem; margin-bottom: 12px; filter: drop-shadow(0 2px 8px rgba(0,0,0,.4)); }
+  .game-name { font-family: 'Orbitron', monospace; font-size: .7rem; font-weight: 700; letter-spacing: .5px; text-align: center; }
+  .game-card.ttt .game-name { color: var(--accent2); }
+  .game-card.rps .game-name { color: var(--accent3); }
+  .game-card.mem .game-name { color: var(--accent); }
+  .game-card.num .game-name { color: var(--accent4); }
+  .game-desc { font-size: .68rem; color: var(--muted); text-align: center; margin-top: 5px; line-height: 1.4; }
+  .game-badge { position: absolute; top: 10px; right: 10px; font-size: .55rem; font-family: 'Orbitron', monospace; padding: 2px 7px; border-radius: 20px; letter-spacing: .5px; }
+  .game-card.ttt .game-badge { background: rgba(0,180,216,.15); color: var(--accent2); }
+  .game-card.rps .game-badge { background: rgba(247,37,133,.15); color: var(--accent3); }
+  .game-card.mem .game-badge { background: rgba(0,245,160,.15); color: var(--accent); }
+  .game-card.num .game-badge { background: rgba(255,214,10,.15); color: var(--accent4); }
+
+  /* ── GAME SCREENS ── */
+  .game-screen { background: var(--bg); flex: 1; }
+  .game-header { display: flex; align-items: center; gap: 12px; padding: 18px 20px 14px; border-bottom: 1px solid var(--border); background: var(--surface); }
+  .back-btn { background: var(--card); border: 1px solid var(--border); border-radius: 10px; color: var(--text); width: 38px; height: 38px; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: border-color .15s; }
+  .back-btn:active { background: var(--border); }
+  .game-title { font-family: 'Orbitron', monospace; font-size: .95rem; font-weight: 700; }
+  .game-body { padding: 20px; flex: 1; display: flex; flex-direction: column; align-items: center; }
+
+  /* ── TIC TAC TOE ── */
+  .ttt-status { font-size: .9rem; color: var(--muted); margin-bottom: 20px; text-align: center; min-height: 22px; }
+  .ttt-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; max-width: 300px; }
+  .ttt-cell { background: var(--card); border: 1px solid var(--border); border-radius: 12px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; cursor: pointer; transition: background .15s, transform .1s; user-select: none; }
+  .ttt-cell:active { transform: scale(0.93); background: var(--border); }
+  .ttt-cell.x { color: var(--accent2); border-color: rgba(0,180,216,.4); }
+  .ttt-cell.o { color: var(--accent3); border-color: rgba(247,37,133,.4); }
+  .ttt-cell.win { background: rgba(0,245,160,.1); border-color: var(--accent); }
+  .ttt-score { display: flex; gap: 16px; margin: 20px 0; }
+  .score-box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 20px; text-align: center; flex: 1; }
+  .score-box .lbl { font-size: .65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .score-box .val { font-family: 'Orbitron', monospace; font-size: 1.4rem; font-weight: 700; margin-top: 2px; }
+  .score-box.x .val { color: var(--accent2); }
+  .score-box.o .val { color: var(--accent3); }
+  .score-box.d .val { color: var(--muted); }
+  .btn-reset { background: var(--card); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-family: 'Exo 2', sans-serif; font-size: .85rem; padding: 12px 28px; cursor: pointer; margin-top: 10px; transition: border-color .15s; }
+  .btn-reset:active { background: var(--border); }
+
+  /* ── ROCK PAPER SCISSORS ── */
+  .rps-arena { display: flex; align-items: center; justify-content: space-around; width: 100%; max-width: 320px; margin: 10px 0 24px; }
+  .rps-side { text-align: center; }
+  .rps-side .lbl { font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .rps-emoji { font-size: 3.5rem; min-height: 70px; display: flex; align-items: center; justify-content: center; transition: transform .2s; filter: drop-shadow(0 2px 10px rgba(0,0,0,.5)); }
+  .rps-vs { font-family: 'Orbitron', monospace; font-size: .8rem; color: var(--border); }
+  .rps-result { font-family: 'Orbitron', monospace; font-size: 1.1rem; font-weight: 700; margin: 4px 0 20px; min-height: 28px; text-align: center; }
+  .rps-result.win { color: var(--accent); }
+  .rps-result.lose { color: var(--accent3); }
+  .rps-result.draw { color: var(--accent4); }
+  .rps-choices { display: flex; gap: 12px; margin-bottom: 20px; }
+  .rps-btn { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; font-size: 2rem; cursor: pointer; transition: transform .15s, border-color .15s, box-shadow .15s; flex: 1; text-align: center; }
+  .rps-btn:active { transform: scale(0.9); }
+  .rps-btn:hover { border-color: var(--accent3); box-shadow: 0 0 16px rgba(247,37,133,.2); }
+
+  /* ── MEMORY CARD ── */
+  .mem-info { display: flex; gap: 16px; margin-bottom: 18px; width: 100%; max-width: 340px; }
+  .mem-stat { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; flex: 1; text-align: center; }
+  .mem-stat .lbl { font-size: .62rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .mem-stat .val { font-family: 'Orbitron', monospace; font-size: 1.1rem; color: var(--accent); font-weight: 700; }
+  .mem-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; max-width: 340px; }
+  .mem-card { aspect-ratio: 1; border-radius: 10px; cursor: pointer; perspective: 600px; }
+  .mem-card-inner { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform .35s; border-radius: 10px; }
+  .mem-card.flipped .mem-card-inner { transform: rotateY(180deg); }
+  .mem-card-front, .mem-card-back { position: absolute; inset: 0; border-radius: 10px; display: flex; align-items: center; justify-content: center; backface-visibility: hidden; }
+  .mem-card-front { background: var(--card); border: 1px solid var(--border); font-size: 1.6rem; }
+  .mem-card-back { background: linear-gradient(135deg, #162830, #0d1f12); border: 1px solid rgba(0,245,160,.3); transform: rotateY(180deg); font-size: 1.5rem; }
+  .mem-card.matched .mem-card-front { background: rgba(0,245,160,.08); border-color: var(--accent); }
+  .mem-win-msg { font-family: 'Orbitron', monospace; font-size: 1rem; color: var(--accent); text-align: center; margin: 16px 0 8px; display: none; }
+
+  /* ── NUMBER GUESS ── */
+  .num-display { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 300px; text-align: center; margin-bottom: 20px; }
+  .num-range { font-size: .75rem; color: var(--muted); margin-bottom: 8px; letter-spacing: 1px; }
+  .num-hint { font-family: 'Orbitron', monospace; font-size: 1.3rem; font-weight: 700; min-height: 36px; color: var(--accent4); }
+  .num-attempts { font-size: .8rem; color: var(--muted); margin-top: 6px; }
+  .num-history { font-size: .72rem; color: var(--muted); margin-top: 8px; min-height: 20px; }
+  .num-input-row { display: flex; gap: 10px; width: 100%; max-width: 300px; margin-bottom: 16px; }
+  .num-input { flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 12px; color: var(--text); padding: 14px 16px; font-family: 'Orbitron', monospace; font-size: 1.1rem; text-align: center; outline: none; transition: border-color .2s; }
+  .num-input:focus { border-color: var(--accent4); box-shadow: 0 0 0 3px rgba(255,214,10,.1); }
+  .btn-guess { background: linear-gradient(135deg, var(--accent4), #ffaa00); border: none; border-radius: 12px; color: #0a0a0f; font-family: 'Orbitron', monospace; font-size: .8rem; font-weight: 700; padding: 14px 20px; cursor: pointer; transition: transform .15s; }
+  .btn-guess:active { transform: scale(0.95); }
+  .num-progress { width: 100%; max-width: 300px; background: var(--card); border-radius: 6px; height: 6px; margin-bottom: 16px; overflow: hidden; }
+  .num-progress-bar { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent4)); border-radius: 6px; transition: width .4s; }
+
+  /* ── AD BANNER ── */
+  .ad-container { width: 100%; min-height: 60px; background: var(--surface); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ad-label { font-size: .65rem; color: var(--border); text-transform: uppercase; letter-spacing: 2px; }
+
+  /* ── ANIMATIONS ── */
+  @keyframes popIn { 0%{transform:scale(0.7);opacity:0} 70%{transform:scale(1.1)} 100%{transform:scale(1);opacity:1} }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+  @keyframes glow-pulse { 0%,100%{box-shadow:0 0 12px rgba(0,245,160,.3)} 50%{box-shadow:0 0 28px rgba(0,245,160,.7)} }
+  .pop { animation: popIn .3s ease forwards; }
+  .shake { animation: shake .3s ease; }
+  .glow-pulse { animation: glow-pulse 1.5s ease infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  .float { animation: float 3s ease infinite; }
+</style>
+</head>
+<body>
+
+<!-- ══ SCREEN: REGISTER ══ -->
+<div id="screen-register" class="screen active">
+  <div class="reg-logo float">GAMEZONE</div>
+  <div class="reg-tagline">Play · Compete · Win</div>
+  <div class="reg-card">
+    <h2>QUICK JOIN</h2>
+    <p>Enter your mobile number to start playing — no passwords needed.</p>
+    <label class="field-label">Mobile Number</label>
+    <div class="phone-wrap">
+      <input class="country-code" id="countryCode" value="+91" maxlength="4">
+      <input class="phone-input" id="phoneInput" type="tel" placeholder="98765 43210" maxlength="15" inputmode="numeric">
+    </div>
+    <button class="btn-primary" onclick="doRegister()">ENTER GAMEZONE ⚡</button>
+    <div class="reg-err" id="regErr">Please enter a valid mobile number.</div>
+  </div>
+</div>
+
+<!-- ══ SCREEN: LOBBY ══ -->
+<div id="screen-lobby" class="screen">
+  <div class="lobby-header">
+    <div class="hub-logo">GAMEZONE</div>
+    <div class="user-chip" id="userChip">👤 Player</div>
+  </div>
+  <div class="lobby-hero">
+    <h1>Game Lobby 🎮</h1>
+    <p>Choose a game and start playing!</p>
+  </div>
+  <div class="games-grid">
+    <div class="game-card ttt" onclick="openGame('ttt')">
+      <span class="game-badge">2 PLAYER</span>
+      <div class="game-icon">❌</div>
+      <div class="game-name">TIC-TAC-TOE</div>
+      <div class="game-desc">Classic X&O strategy battle</div>
+    </div>
+    <div class="game-card rps" onclick="openGame('rps')">
+      <span class="game-badge">VS CPU</span>
+      <div class="game-icon">✊</div>
+      <div class="game-name">ROCK PAPER SCISSORS</div>
+      <div class="game-desc">Beat the machine!</div>
+    </div>
+    <div class="game-card mem" onclick="openGame('mem')">
+      <span class="game-badge">SOLO</span>
+      <div class="game-icon">🃏</div>
+      <div class="game-name">MEMORY CARDS</div>
+      <div class="game-desc">Match all pairs to win</div>
+    </div>
+    <div class="game-card num" onclick="openGame('num')">
+      <span class="game-badge">SOLO</span>
+      <div class="game-icon">🔢</div>
+      <div class="game-name">NUMBER GUESS</div>
+      <div class="game-desc">Find the secret number</div>
+    </div>
+  </div>
+  <!-- AD SLOT -->
+  <div class="ad-container" id="adLobby">
+    <!-- ════════════════════════════════════════════════
+         GOOGLE ADSENSE AD UNIT — LOBBY BOTTOM BANNER
+         Replace this comment with your AdSense <ins> tag
+         ════════════════════════════════════════════════ -->
+    <span class="ad-label">Advertisement</span>
+  </div>
+</div>
+
+<!-- ══ SCREEN: TIC-TAC-TOE ══ -->
+<div id="screen-ttt" class="screen game-screen">
+  <div class="game-header">
+    <button class="back-btn" onclick="goLobby()">←</button>
+    <div class="game-title" style="color:var(--accent2)">TIC-TAC-TOE</div>
+  </div>
+  <div class="game-body">
+    <div class="ttt-score">
+      <div class="score-box x"><div class="lbl">Player X</div><div class="val" id="tttScoreX">0</div></div>
+      <div class="score-box d"><div class="lbl">Draws</div><div class="val" id="tttScoreD">0</div></div>
+      <div class="score-box o"><div class="lbl">Player O</div><div class="val" id="tttScoreO">0</div></div>
+    </div>
+    <div class="ttt-status" id="tttStatus">Player X's turn</div>
+    <div class="ttt-board" id="tttBoard"></div>
+    <button class="btn-reset" onclick="tttReset()" style="margin-top:18px">New Game</button>
+  </div>
+  <div class="ad-container">
+    <!-- ════════════════════════════════════════
+         GOOGLE ADSENSE AD UNIT — TTT GAME BOTTOM
+         ════════════════════════════════════════ -->
+    <span class="ad-label">Advertisement</span>
+  </div>
+</div>
+
+<!-- ══ SCREEN: ROCK PAPER SCISSORS ══ -->
+<div id="screen-rps" class="screen game-screen">
+  <div class="game-header">
+    <button class="back-btn" onclick="goLobby()">←</button>
+    <div class="game-title" style="color:var(--accent3)">ROCK PAPER SCISSORS</div>
+  </div>
+  <div class="game-body">
+    <div class="ttt-score" style="width:100%;max-width:320px">
+      <div class="score-box x" style=""><div class="lbl">You</div><div class="val" id="rpsScoreP" style="color:var(--accent)">0</div></div>
+      <div class="score-box d"><div class="lbl">Draws</div><div class="val" id="rpsScoreD">0</div></div>
+      <div class="score-box o"><div class="lbl">CPU</div><div class="val" id="rpsScoreCPU" style="color:var(--accent3)">0</div></div>
+    </div>
+    <div class="rps-arena">
+      <div class="rps-side">
+        <div class="lbl">YOU</div>
+        <div class="rps-emoji" id="rpsPlayerEmoji">❓</div>
+      </div>
+      <div class="rps-vs">VS</div>
+      <div class="rps-side">
+        <div class="lbl">CPU</div>
+        <div class="rps-emoji" id="rpsCPUEmoji">❓</div>
+      </div>
+    </div>
+    <div class="rps-result" id="rpsResult">Choose your move!</div>
+    <div class="rps-choices">
+      <button class="rps-btn" onclick="rpsPlay('rock')" title="Rock">🪨</button>
+      <button class="rps-btn" onclick="rpsPlay('paper')" title="Paper">📄</button>
+      <button class="rps-btn" onclick="rpsPlay('scissors')" title="Scissors">✂️</button>
+    </div>
+    <button class="btn-reset" onclick="rpsReset()">Reset Scores</button>
+  </div>
+  <div class="ad-container">
+    <!-- ════════════════════════════════════════
+         GOOGLE ADSENSE AD UNIT — RPS GAME BOTTOM
+         ════════════════════════════════════════ -->
+    <span class="ad-label">Advertisement</span>
+  </div>
+</div>
+
+<!-- ══ SCREEN: MEMORY CARDS ══ -->
+<div id="screen-mem" class="screen game-screen">
+  <div class="game-header">
+    <button class="back-btn" onclick="goLobby()">←</button>
+    <div class="game-title" style="color:var(--accent)">MEMORY CARDS</div>
+  </div>
+  <div class="game-body">
+    <div class="mem-info">
+      <div class="mem-stat"><div class="lbl">Moves</div><div class="val" id="memMoves">0</div></div>
+      <div class="mem-stat"><div class="lbl">Matched</div><div class="val" id="memMatched">0</div></div>
+      <div class="mem-stat"><div class="lbl">Best</div><div class="val" id="memBest" style="color:var(--accent4)">—</div></div>
+    </div>
+    <div class="mem-grid" id="memGrid"></div>
+    <div class="mem-win-msg" id="memWinMsg">🎉 YOU WON!</div>
+    <button class="btn-reset" onclick="memInit()" style="margin-top:16px">New Game</button>
+  </div>
+  <div class="ad-container">
+    <!-- ════════════════════════════════════════
+         GOOGLE ADSENSE AD UNIT — MEM GAME BOTTOM
+         ════════════════════════════════════════ -->
+    <span class="ad-label">Advertisement</span>
+  </div>
+</div>
+
+<!-- ══ SCREEN: NUMBER GUESS ══ -->
+<div id="screen-num" class="screen game-screen">
+  <div class="game-header">
+    <button class="back-btn" onclick="goLobby()">←</button>
+    <div class="game-title" style="color:var(--accent4)">NUMBER GUESS</div>
+  </div>
+  <div class="game-body">
+    <div class="ttt-score" style="width:100%;max-width:300px">
+      <div class="score-box x"><div class="lbl">Wins</div><div class="val" id="numWins" style="color:var(--accent)">0</div></div>
+      <div class="score-box d"><div class="lbl">Best</div><div class="val" id="numBest" style="color:var(--accent4)">—</div></div>
+      <div class="score-box o"><div class="lbl">Round</div><div class="val" id="numRound" style="color:var(--muted)">1</div></div>
+    </div>
+    <div class="num-display">
+      <div class="num-range">Guess a number between <b>1</b> and <b>100</b></div>
+      <div class="num-hint" id="numHint">🤔 Start Guessing!</div>
+      <div class="num-attempts">Attempts left: <span id="numLeft">7</span> / 7</div>
+      <div class="num-history" id="numHistory"></div>
+    </div>
+    <div class="num-progress"><div class="num-progress-bar" id="numBar" style="width:100%"></div></div>
+    <div class="num-input-row">
+      <input class="num-input" id="numInput" type="number" min="1" max="100" placeholder="?" inputmode="numeric">
+      <button class="btn-guess" onclick="numGuess()">GUESS!</button>
+    </div>
+    <button class="btn-reset" onclick="numInit()">New Number</button>
+  </div>
+  <div class="ad-container">
+    <!-- ════════════════════════════════════════
+         GOOGLE ADSENSE AD UNIT — NUM GAME BOTTOM
+         ════════════════════════════════════════ -->
+    <span class="ad-label">Advertisement</span>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════
+   NAVIGATION
+════════════════════════════════ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+}
+function openGame(id) {
+  showScreen(id);
+  if (id === 'ttt') tttInit();
+  if (id === 'rps') rpsInit();
+  if (id === 'mem') memInit();
+  if (id === 'num') numInit();
+}
+function goLobby() { showScreen('lobby'); }
+
+/* ════════════════════════════════
+   REGISTRATION
+════════════════════════════════ */
+function doRegister() {
+  const raw = document.getElementById('phoneInput').value.replace(/\D/g,'');
+  const err = document.getElementById('regErr');
+  if (raw.length < 7) { err.style.display = 'block'; document.getElementById('phoneInput').classList.add('shake'); setTimeout(()=>document.getElementById('phoneInput').classList.remove('shake'),400); return; }
+  err.style.display = 'none';
+  const code = document.getElementById('countryCode').value;
+  document.getElementById('userChip').textContent = '📱 ' + code + raw;
+  showScreen('lobby');
+}
+document.getElementById('phoneInput').addEventListener('keydown', e => { if (e.key === 'Enter') doRegister(); });
+
+/* ════════════════════════════════
+   TIC-TAC-TOE
+════════════════════════════════ */
+let tttBoard = [], tttTurn = 'X', tttActive = true;
+let tttScore = {X:0, O:0, D:0};
+const tttWins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+const tttSymbols = {X:'✕', O:'○'};
+
+function tttInit() {
+  tttBoard = Array(9).fill('');
+  tttTurn = 'X'; tttActive = true;
+  document.getElementById('tttStatus').textContent = "Player X's turn";
+  renderTTT();
+}
+function renderTTT() {
+  const g = document.getElementById('tttBoard');
+  g.innerHTML = '';
+  tttBoard.forEach((v, i) => {
+    const c = document.createElement('div');
+    c.className = 'ttt-cell' + (v ? ' ' + v.toLowerCase() : '');
+    c.textContent = v ? tttSymbols[v] : '';
+    c.addEventListener('click', () => tttClick(i));
+    c.addEventListener('touchend', e => { e.preventDefault(); tttClick(i); });
+    g.appendChild(c);
+  });
+}
+function tttClick(i) {
+  if (!tttActive || tttBoard[i]) return;
+  tttBoard[i] = tttTurn;
+  const winner = tttCheck();
+  renderTTT();
+  if (winner) {
+    tttScore[winner]++;
+    updateTTTScore();
+    document.getElementById('tttStatus').textContent = winner === 'D' ? "It's a Draw! 🤝" : `Player ${winner} Wins! 🎉`;
+    highlightWin(winner);
+    tttActive = false;
+    return;
+  }
+  tttTurn = tttTurn === 'X' ? 'O' : 'X';
+  document.getElementById('tttStatus').textContent = `Player ${tttTurn}'s turn`;
+}
+function tttCheck() {
+  for (const [a,b,c] of tttWins)
+    if (tttBoard[a] && tttBoard[a] === tttBoard[b] && tttBoard[b] === tttBoard[c]) return tttBoard[a];
+  if (tttBoard.every(v => v)) return 'D';
+  return null;
+}
+function highlightWin(winner) {
+  if (winner === 'D') return;
+  for (const [a,b,c] of tttWins)
+    if (tttBoard[a] && tttBoard[a] === tttBoard[b] && tttBoard[b] === tttBoard[c]) {
+      const cells = document.querySelectorAll('.ttt-cell');
+      [a,b,c].forEach(i => cells[i].classList.add('win'));
+    }
+}
+function updateTTTScore() {
+  document.getElementById('tttScoreX').textContent = tttScore.X;
+  document.getElementById('tttScoreO').textContent = tttScore.O;
+  document.getElementById('tttScoreD').textContent = tttScore.D;
+}
+function tttReset() { tttInit(); }
+
+/* ════════════════════════════════
+   ROCK PAPER SCISSORS
+════════════════════════════════ */
+const rpsEmoji = {rock:'🪨', paper:'📄', scissors:'✂️'};
+const rpsChoices = ['rock','paper','scissors'];
+let rpsScore = {p:0, cpu:0, d:0};
+
+function rpsInit() {
+  document.getElementById('rpsPlayerEmoji').textContent = '❓';
+  document.getElementById('rpsCPUEmoji').textContent = '❓';
+  document.getElementById('rpsResult').textContent = 'Choose your move!';
+  document.getElementById('rpsResult').className = 'rps-result';
+}
+function rpsPlay(choice) {
+  const cpu = rpsChoices[Math.floor(Math.random() * 3)];
+  const pe = document.getElementById('rpsPlayerEmoji');
+  const ce = document.getElementById('rpsCPUEmoji');
+  const re = document.getElementById('rpsResult');
+  pe.textContent = '⏳'; ce.textContent = '⏳';
+  setTimeout(() => {
+    pe.textContent = rpsEmoji[choice];
+    ce.textContent = rpsEmoji[cpu];
+    pe.style.animation = 'none'; ce.style.animation = 'none';
+    void pe.offsetWidth; void ce.offsetWidth;
+    pe.style.animation = 'popIn .3s ease forwards';
+    ce.style.animation = 'popIn .3s ease forwards';
+    let result, cls;
+    if (choice === cpu) { result = "Draw! 🤝"; cls = 'rps-result draw'; rpsScore.d++; }
+    else if ((choice==='rock'&&cpu==='scissors')||(choice==='paper'&&cpu==='rock')||(choice==='scissors'&&cpu==='paper')) {
+      result = "You Win! 🎉"; cls = 'rps-result win'; rpsScore.p++;
+    } else { result = "CPU Wins! 🤖"; cls = 'rps-result lose'; rpsScore.cpu++; }
+    re.textContent = result; re.className = cls;
+    document.getElementById('rpsScoreP').textContent = rpsScore.p;
+    document.getElementById('rpsScoreCPU').textContent = rpsScore.cpu;
+    document.getElementById('rpsScoreD').textContent = rpsScore.d;
+  }, 400);
+}
+function rpsReset() { rpsScore = {p:0,cpu:0,d:0}; document.getElementById('rpsScoreP').textContent=0; document.getElementById('rpsScoreCPU').textContent=0; document.getElementById('rpsScoreD').textContent=0; rpsInit(); }
+
+/* ════════════════════════════════
+   MEMORY CARDS
+════════════════════════════════ */
+const memEmojis = ['🎮','🎯','🚀','🌙','⚡','🎲','💎','🔥'];
+let memCards = [], memFlipped = [], memLocked = false, memMoveCount = 0, memMatchCount = 0, memBestScore = null;
+
+function memInit() {
+  const pairs = [...memEmojis, ...memEmojis].sort(() => Math.random() - 0.5);
+  memCards = pairs.map((e,i) => ({id:i, emoji:e, flipped:false, matched:false}));
+  memFlipped = []; memLocked = false; memMoveCount = 0; memMatchCount = 0;
+  document.getElementById('memMoves').textContent = 0;
+  document.getElementById('memMatched').textContent = 0;
+  document.getElementById('memWinMsg').style.display = 'none';
+  renderMem();
+}
+function renderMem() {
+  const g = document.getElementById('memGrid');
+  g.innerHTML = '';
+  memCards.forEach((card, i) => {
+    const el = document.createElement('div');
+    el.className = 'mem-card' + (card.flipped||card.matched ? ' flipped' : '') + (card.matched ? ' matched' : '');
+    el.innerHTML = `<div class="mem-card-inner"><div class="mem-card-front">🎴</div><div class="mem-card-back">${card.emoji}</div></div>`;
+    el.addEventListener('click', () => memFlip(i));
+    el.addEventListener('touchend', e => { e.preventDefault(); memFlip(i); });
+    g.appendChild(el);
+  });
+}
+function memFlip(i) {
+  const card = memCards[i];
+  if (memLocked || card.flipped || card.matched) return;
+  card.flipped = true;
+  memFlipped.push(i);
+  renderMem();
+  if (memFlipped.length === 2) {
+    memLocked = true;
+    memMoveCount++;
+    document.getElementById('memMoves').textContent = memMoveCount;
+    const [a, b] = memFlipped;
+    if (memCards[a].emoji === memCards[b].emoji) {
+      memCards[a].matched = memCards[b].matched = true;
+      memMatchCount++;
+      document.getElementById('memMatched').textContent = memMatchCount;
+      memFlipped = []; memLocked = false;
+      renderMem();
+      if (memMatchCount === 8) {
+        if (!memBestScore || memMoveCount < memBestScore) { memBestScore = memMoveCount; document.getElementById('memBest').textContent = memBestScore; }
+        document.getElementById('memWinMsg').style.display = 'block';
+        document.getElementById('memWinMsg').classList.add('pop');
+      }
+    } else {
+      setTimeout(() => {
+        memCards[a].flipped = memCards[b].flipped = false;
+        memFlipped = []; memLocked = false;
+        renderMem();
+      }, 900);
+    }
+  }
+}
+
+/* ════════════════════════════════
+   NUMBER GUESS
+════════════════════════════════ */
+let numSecret = 0, numAttemptsLeft = 7, numMaxAttempts = 7;
+let numWins = 0, numBest = null, numRound = 1, numGuesses = [];
+
+function numInit() {
+  numSecret = Math.floor(Math.random() * 100) + 1;
+  numAttemptsLeft = numMaxAttempts;
+  numGuesses = [];
+  document.getElementById('numHint').textContent = '🤔 Start Guessing!';
+  document.getElementById('numLeft').textContent = numMaxAttempts;
+  document.getElementById('numHistory').textContent = '';
+  document.getElementById('numInput').value = '';
+  document.getElementById('numInput').disabled = false;
+  document.querySelector('.btn-guess').disabled = false;
+  document.getElementById('numBar').style.width = '100%';
+}
+function numGuess() {
+  const inp = document.getElementById('numInput');
+  const val = parseInt(inp.value);
+  if (!val || val < 1 || val > 100) { inp.classList.add('shake'); setTimeout(()=>inp.classList.remove('shake'),400); return; }
+  if (numGuesses.includes(val)) { document.getElementById('numHint').textContent = `Already tried ${val}!`; return; }
+  numGuesses.push(val);
+  numAttemptsLeft--;
+  inp.value = '';
+  const left = numAttemptsLeft;
+  document.getElementById('numLeft').textContent = left;
+  document.getElementById('numBar').style.width = (left / numMaxAttempts * 100) + '%';
+  document.getElementById('numHistory').textContent = 'Tried: ' + numGuesses.join(', ');
+  const hint = document.getElementById('numHint');
+  if (val === numSecret) {
+    hint.textContent = `🎉 Correct! It was ${numSecret}!`;
+    numWins++; numRound++;
+    if (!numBest || (numMaxAttempts - left) < numBest) { numBest = numMaxAttempts - left; }
+    document.getElementById('numWins').textContent = numWins;
+    document.getElementById('numBest').textContent = numBest !== null ? numBest + ' tries' : '—';
+    document.getElementById('numRound').textContent = numRound;
+    document.getElementById('numInput').disabled = true;
+    document.querySelector('.btn-guess').disabled = true;
+  } else if (left === 0) {
+    hint.textContent = `😔 It was ${numSecret}! Try again.`;
+    document.getElementById('numInput').disabled = true;
+    document.querySelector('.btn-guess').disabled = true;
+    numRound++;
+    document.getElementById('numRound').textContent = numRound;
+  } else {
+    const diff = Math.abs(val - numSecret);
+    let temp = '';
+    if (diff <= 5) temp = '🔥 Very Hot!';
+    else if (diff <= 15) temp = '♨️ Warm!';
+    else if (diff <= 30) temp = '🌤️ Cool...';
+    else temp = '🧊 Cold!';
+    hint.textContent = val < numSecret ? `⬆️ Too Low  ${temp}` : `⬇️ Too High  ${temp}`;
+  }
+}
+document.getElementById('numInput').addEventListener('keydown', e => { if (e.key === 'Enter') numGuess(); });
+</script>
+</body>
+</html>
